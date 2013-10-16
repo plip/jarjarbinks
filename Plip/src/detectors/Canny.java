@@ -1,3 +1,5 @@
+package detectors;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,27 +18,20 @@ public class Canny {
 	public void run(){
 	
 			
-			Mat image = Highgui.imread(getClass().getResource("/IMG_0370.jpg").getPath());
+			Mat image = Highgui.imread(getClass().getResource("/IMG_0363.jpg").getPath());
 			Mat binary = new Mat();
-			binary=image;
-			// Create binary image from source image
-			Imgproc.cvtColor(image, binary, Imgproc.COLOR_BGR2GRAY);
-	  		Highgui.imwrite( "bw.jpg" , binary);
-	  		Imgproc.threshold(binary, binary, 498, 500, Imgproc.THRESH_TOZERO_INV);
-	  		Imgproc.medianBlur(binary, binary, 11);
-	  		Imgproc.equalizeHist(binary, binary);
-	  		Highgui.imwrite( "equ.jpg" , binary);
-	  		
-	  		Highgui.imwrite( "t.jpg" , binary);
 			
+			// Create binary image from source image
+			
+			Imgproc.medianBlur(image, image, 9);
 			
 //			Highgui.imwrite( "nogreen.jpg" , image);
 			Mat canny = new Mat();
-//			binary= image;
-	  		
+			binary= image;
+//	  		Imgproc.cvtColor(image, binary, Imgproc.COLOR_BGR2GRAY);
 //	  		Imgproc.bilateralFilter(binary, binary ,5, 5, 3, 2);
-	  		
-	  		Imgproc.Canny(binary, canny, 25, 50);
+	  		Highgui.imwrite( "bw.jpg" , binary);
+	  		Imgproc.Canny(binary, canny, 22, 44);
 	  		
 	  		Highgui.imwrite( "canny.jpg" , canny);
 	  		Imgproc.dilate(canny, canny, new Mat(), new Point(-1,-1), 6);
@@ -52,7 +47,7 @@ public class Canny {
 	  		System.out.println(contours.size());
 //	  		Imgproc.drawContours(canny, contours, -1, s1, -1);
 	  		
-//	  		Highgui.imwrite( "contours.jpg" , canny);
+	  		Highgui.imwrite( "contours.jpg" , canny);
 	  		Mat bigcountours = new Mat();
 	  		for (int i = 0; i < contours.size(); i++) {
 				contours.get(i).convertTo(mMOP2f1, CvType.CV_32FC2);
@@ -64,29 +59,22 @@ public class Canny {
 					count++;
 //					System.out.println(Imgproc.contourArea(approx));
 					Imgproc.drawContours(canny, contours, i, s1, -1);
-//				 	Highgui.imwrite("contour"+i+".jpg", canny);
+					Highgui.imwrite("contour"+i+".jpg", canny);
 				}
 			}
-	  		Highgui.imwrite("contours.jpg", canny);
-	  		List<MatOfPoint> dcontours = new ArrayList<MatOfPoint>();
-	  		Imgproc.distanceTransform(canny, canny, Imgproc.CV_DIST_L1, 3);
 	  		
-	  		Highgui.imwrite( "dist.jpg" , canny);
-	  		Imgproc.threshold(canny, canny, 64, 128, Imgproc.THRESH_BINARY);
-	  		Highgui.imwrite( "thres.jpg" , canny);
-//			
-	  		Mat other = new Mat();
-	  		canny.convertTo(other, CvType.CV_8UC1);
-	  		
+//	  		List<MatOfPoint> dcountours = new ArrayList<MatOfPoint>();
+//	  		Imgproc.distanceTransform(canny, canny, Imgproc.CV_DIST_L2, 3);
+//	  		Highgui.imwrite( "dist.jpg" , canny);
+//	  		Imgproc.threshold(canny, canny, 64, 128, Imgproc.THRESH_BINARY);
+//	  		Highgui.imwrite( "thres.jpg" , canny);
+//	  		Imgproc.findContours(canny, dcountours, new Mat(),
+//					Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 	  		int realcount=0;
-	  		Imgproc.findContours(other, dcontours, new Mat(),
-					Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-	  		Imgproc.drawContours(other, dcontours,-1, s1);
-	  		Highgui.imwrite( "other.jpg" , other);
+	  		
 //	  		}
 //	  		Highgui.imwrite("bigcontour.jpg", canny);
 	  		System.out.println(count);
-	  		System.out.println(dcontours.size());
 }
 	
 }
