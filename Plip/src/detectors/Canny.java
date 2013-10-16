@@ -1,4 +1,4 @@
-package detectors.canny;
+package detectors;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +16,7 @@ import org.opencv.imgproc.Imgproc;
 public class Canny {
 
 	public void run(){
-	
-			
+
 			Mat image = Highgui.imread(getClass().getResource("/IMG_0368.jpg").getPath());
 			Mat binary = new Mat();
 			
