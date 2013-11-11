@@ -1,11 +1,7 @@
 package detectors;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.highgui.Highgui;
@@ -16,9 +12,9 @@ public class Watershed {
 	/**
 	 * @param args
 	 */
-	public void run(){
+	public void count(){
 		
-		Mat image = Highgui.imread(getClass().getResource("/Scene.jpg").getPath());
+		Mat image = Highgui.imread(getClass().getResource("/15.jpg").getPath());
 		Mat binary = new Mat();
 		 
 		// Create binary image from source image
