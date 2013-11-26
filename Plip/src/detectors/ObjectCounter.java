@@ -9,6 +9,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.RotatedRect;
 import org.opencv.core.Scalar;
 import org.opencv.highgui.Highgui;
@@ -17,21 +18,24 @@ import org.opencv.imgproc.Imgproc;
 public class ObjectCounter {
 	
 	private int quantity;
-
+	private List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+	
 	public void count() {
 		
-		Mat image = Highgui.imread(getClass().getResource("/51.jpg")
-				.getPath());
-		
+		Mat image = Highgui.imread(getClass().getResource("/51.jpg").getPath());
 		Mat imageWithEdges = edgeDetector(image);
 
 		Mat detectedObjects = findContours(imageWithEdges);
 		
 		System.out.println(quantity);
-		/*Aplicar arcLength para saber si hay algun problema contornos muy grandes*/
-		imageDistanceTransformer(detectedObjects);	
+		System.out.println(this.contours.size());
+		for(int i = 0; i<this.contours.size(); i++){
+			cropContour(image, contours.get(i), i);
+		}
 		
-		System.out.println(quantity);
+		/*Aplicar arcLength para saber si hay algun problema contornos muy grandes*/
+		/*imageDistanceTransformer(detectedObjects);	
+		System.out.println(quantity);*/
 	}
 
 	public Mat findContours( Mat filteredImage) {
@@ -45,18 +49,23 @@ public class ObjectCounter {
 		/*Finds contours in the image and saves contours to contours object*/
 		Imgproc.findContours(filteredImage, contours, new Mat(),
 				Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
-
+		Imgproc.drawContours(filteredImage, contours,  -1, s1, -1);
+		
 		Highgui.imwrite("contours.jpg", filteredImage);
-
+		Imgproc.erode(filteredImage, filteredImage, new Mat(),new Point(-1,-1),5);
+		Highgui.imwrite("contourse.jpg", filteredImage);
+		contours = new ArrayList<MatOfPoint>(); 
+		Imgproc.findContours(filteredImage, contours, new Mat(),
+				Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
 		for (int i = 0; i < contours.size(); i++) {
 
 			contours.get(i).convertTo(mMOP2f1, CvType.CV_32FC2);
 	
-//			Imgproc.approxPolyDP(mMOP2f1, approx,
-//					Imgproc.arcLength(mMOP2f1, true) * 0.02, true);
-//			
-//			approx.convertTo(mMOP, CvType.CV_32S);
-//			Point[] pointArray = approx.toArray();
+			/*Imgproc.approxPolyDP(mMOP2f1, approx,
+			Imgproc.arcLength(mMOP2f1, true) * 0.02, true);		
+			approx.convertTo(mMOP, CvType.CV_32S);
+			Point[] pointArray = approx.toArray();*/
+			
 			RotatedRect rotated = Imgproc.minAreaRect(mMOP2f1);
 			Point[] vertices = new Point[4];
 			rotated.points(vertices);
@@ -68,7 +77,7 @@ public class ObjectCounter {
 
 				System.out.println(Imgproc.contourArea(verticesMat));
 				Imgproc.drawContours(filteredImage, contours, i, s1, -1);
-				
+				this.contours.add(contours.get(i));
 				Highgui.imwrite("contour"+i+".jpg", filteredImage);
 
 				quantity++;
@@ -108,7 +117,6 @@ public class ObjectCounter {
 		// Filter Create binary image from source image
 		/*Transform Image from BGR To RGB*/
 		Imgproc.cvtColor(image, binary, Imgproc.COLOR_BGR2RGB);
-		//Ycbcr 
 		/*Apply median blur to smooth image*/
 		Imgproc.medianBlur(binary, medianBlur, 7);
 		/*Apply bilateral filter to smooth image but maintaining edges*/
@@ -122,36 +130,45 @@ public class ObjectCounter {
 				-1), 3);
 		Highgui.imwrite("Median.jpg", medianBlur);
 		Highgui.imwrite("CannybilateralFilterDilated.jpg", cannyBilateral);
-		
 
 		return cannyBilateral;
 	}
 	
 	public void imageDistanceTransformer( Mat detectedObjects ){
 		
-		// transformation
+		/*Distance transform to separate objects*/
 		
 		Mat thres = new Mat();
 		Mat normalize = new Mat();
 		Mat transform = new Mat();
-		/*Distance transform to separate objects*/
 		
 		Imgproc.distanceTransform(detectedObjects, transform,
 				Imgproc.CV_DIST_L1, 0);
 		Highgui.imwrite("transform.jpg", transform);
-//		Mat transform = detectedObjects;
+
 		Core.normalize(transform, normalize, 0, 255, Core.NORM_MINMAX);
 		Highgui.imwrite("normalize.jpg", normalize);
+		
 		/*Threshold to recount the objects*/
 		Imgproc.threshold(normalize, thres, 64, 128, Imgproc.THRESH_BINARY);
-		
 		Highgui.imwrite("thres.jpg", thres);
+		Imgproc.dilate(thres, thres,new Mat(), new Point(-1,
+				-1), 10);
+		Highgui.imwrite("thresd.jpg", thres);
 
 		thres.convertTo(thres, CvType.CV_8UC1);
 		
 		findContoursAfterDistance(thres);
-		
-		
+	}
+	
+	public void cropContour(Mat image, MatOfPoint contour, int i){
+		Rect boundRect = Imgproc.boundingRect(contour);
+		boundRect.height += 30;
+		boundRect.width += 30;
+		boundRect.x -= 15;
+		boundRect.y -= 15;
+		Mat subImage = image.submat(boundRect);
+		//Highgui.imwrite("bound"+i+".jpg", subImage);
 	}
 
 }
