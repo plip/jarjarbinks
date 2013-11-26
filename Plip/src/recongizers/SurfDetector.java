@@ -28,25 +28,13 @@ import org.opencv.imgproc.Imgproc;
 
 public class SurfDetector {
 
-	public void run(){
-		 Mat img_object = Highgui.imread(getClass().getResource("/res/Lanzopral.jpg").getPath());
-		 Mat img_scene = Highgui.imread(getClass().getResource("/res/5.1.b.jpg").getPath());
-		 Imgproc.cvtColor(img_object, img_object, Imgproc.COLOR_BGR2GRAY);
-////		 Imgproc.equalizeHist(img_object, img_object);
-		 Imgproc.cvtColor(img_scene, img_scene, Imgproc.COLOR_BGR2GRAY);
-//		 Imgproc.equalizeHist(img_scene, img_scene);
-//		 Imgproc.medianBlur(img_object, img_object, 7);
-//		 Imgproc.medianBlur(img_scene, img_scene, 7);
+	public void detect(String imageRes, String sceneRes){
 		 
-//		 Imgproc.cvtColor(img_object, img_object, Imgproc.COLOR_BGR2GRAY);
-//		 Imgproc.cvtColor(img_scene, img_scene, Imgproc.COLOR_BGR2GRAY);
-		 Mat back = new Mat();
-//		 Core.inRange(img_scene, new Scalar(80 ,121 ,23), new Scalar(90 ,133, 33), back);
-//		  if( img_object.dataAddr() != 0 || img_scene.dataAddr() != 0 )
-		//  { std::cout<< " --(!) Error reading images " << std::endl; return -1; }
-
+		 Mat img_object = Highgui.imread(getClass().getResource("/"+imageRes).getPath());
+		 Mat img_scene = Highgui.imread(getClass().getResource("/"+sceneRes).getPath());
+		 Imgproc.cvtColor(img_object, img_object, Imgproc.COLOR_BGR2GRAY);
+		 Imgproc.cvtColor(img_scene, img_scene, Imgproc.COLOR_BGR2GRAY);
 		  //-- Step 1: Detect the keypoints using SURF Detector
-		  int minHessian = 400;
 
 		  FeatureDetector detector = FeatureDetector.create(FeatureDetector.ORB);
 
@@ -67,13 +55,12 @@ public class SurfDetector {
 		  //-- Step 3: Matching descriptor vectors using FLANN matcher
 		  DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
 		  MatOfDMatch matches = new MatOfDMatch() ;
-//		  List<MatOfDMatch> matchesList = new ArrayList<MatOfDMatch>();
-//		  matchesList.add(matches);
+
 		  matcher.match( descriptors_object, descriptors_scene, matches);
 
 		  double max_dist = 0; 
 		  double min_dist = 100;
-//		  matches = matchesList.get(0);
+		  //		  matches = matchesList.get(0);
 		  //-- Quick calculation of max and min distances between keypoints
 		  
 		  double avg = 0;
@@ -91,20 +78,10 @@ public class SurfDetector {
 //		    	System.out.println("-- Max dist : %f \n" + max_dist );
 		    	 }
 		  }
-//		  Mergesort sort = new Mergesort();
-//		  int medianPosition = 0;
-//		  if(distances.length % 2 == 0){
-//			  medianPosition = distances.length/2;
-//		  }else{
-//			  medianPosition = distances.length/2 + 1;
-//		  }
-//		  sort.sort(distances);
-//		  double median = distances[medianPosition];
-//		
+
 		  System.out.println("-- Max dist : %f \n" + max_dist );
 		  System.out.println("-- Min dist : %f \n"+ min_dist );
 		  
-//		  System.out.println("-- Median : %f \n"+ median );
 		  
 
 		  //-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
@@ -119,11 +96,12 @@ public class SurfDetector {
 		     }
 		  }
 		  avg = avg/(good_matches.rows());
-		  System.out.println("-- AVG : %f \n"+ avg );
 		  
+		  System.out.println("-- AVG : %f \n"+ avg );
+		  System.out.println("-- #Matches : \n" + good_matches.rows() );
 		  Mat img_matches = new Mat();
 		  MatOfByte bytes = new MatOfByte();
-		 Features2d.drawMatches( img_object, keypoints_object, img_scene, keypoints_scene,
+		  Features2d.drawMatches( img_object, keypoints_object, img_scene, keypoints_scene,
 		               good_matches, img_matches, Scalar.all(-1), Scalar.all(-1),
 		               bytes , Features2d.NOT_DRAW_SINGLE_POINTS );
 
@@ -143,9 +121,6 @@ public class SurfDetector {
 		    scene_good_points[i] = ( keypoints_scene_array[ good_dmatches[i].trainIdx ].pt );
 		  }
 		  obj.fromArray(obj_good_points);
-		  scene.fromArray(scene_good_points);
-		  System.out.println(obj.size());
-		  System.out.println(scene.size());
 		  try{
 		  Mat h = Calib3d.findHomography( obj, scene, Calib3d.RANSAC, 5.0 );
 		  
@@ -171,10 +146,7 @@ public class SurfDetector {
 		  Point point2 = new Point(scene_corners.toArray()[1].x + img_object.cols(),scene_corners.toArray()[1].y);
 		  Point point3 = new Point(scene_corners.toArray()[2].x + img_object.cols(),scene_corners.toArray()[2].y);
 		  Point point4 = new Point(scene_corners.toArray()[3].x + img_object.cols(),scene_corners.toArray()[3].y);
-//		  Core.line( img_matches, point1 , point2, new Scalar(0, 255, 0), 8 );
-//		  Core.line( img_matches, point2 , point3, new Scalar( 0, 255, 0), 8 );
-//		  Core.line( img_matches, point3, point4, new Scalar( 0, 255, 0), 8 );
-//		  Core.line( img_matches, point4, point1, new Scalar( 0, 255, 0), 8 );
+
 		  Point[][] pointsArray = new Point[1][4];
 		  Point[] points = {point1,point2,point3,point4};
 		  pointsArray[0]=points;
@@ -188,19 +160,18 @@ public class SurfDetector {
 		  }
 		  //-- Show detected matches
 		  String filename = "objectDetected.jpg";
-//		  String file = "back.png";
+
 		  Highgui.imwrite( filename , img_matches );
-//		  Highgui.imwrite( file , back );
-		  System.out.print(matches.size());
+		 
 	}
 	/** @function main */
-	public static void main( String[] args )
-	{
-		System.loadLibrary("opencv_java246");
-		SurfDetector surfDetector = new SurfDetector();
-		surfDetector.run();
-	 
-	}
+//	public static void main( String[] args )
+//	{
+//		System.loadLibrary("opencv_java246");
+//		SurfDetector surfDetector = new SurfDetector();
+//		surfDetector.detect("Lanzopral.jpg","_Lanzopral.jpg");
+//	 
+//	}
 
 }
 	
