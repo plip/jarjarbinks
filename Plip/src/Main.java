@@ -1,6 +1,4 @@
-import org.opencv.core.Mat;
-import org.opencv.highgui.Highgui;
-
+import recongizers.SurfDetector;
 import detectors.ObjectCounter;
 
 
@@ -15,10 +13,10 @@ public class Main {
 
 		ObjectCounter canny =new ObjectCounter();
 		
-		canny.count();
+		canny.count("55.jpg");
 
-//		SurfDetector surfDetector = new SurfDetector();
-//		surfDetector.detect("Lanzopral.jpg","_Lanzopral.jpg");
+		SurfDetector surfDetector = new SurfDetector();
+		surfDetector.recognize();
 	}
 
 }

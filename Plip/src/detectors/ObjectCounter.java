@@ -20,9 +20,9 @@ public class ObjectCounter {
 	private int quantity;
 	private List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 	
-	public void count() {
+	public void count(String Resource) {
 		
-		Mat image = Highgui.imread(getClass().getResource("/51.jpg").getPath());
+		Mat image = Highgui.imread(getClass().getResource("/"+Resource).getPath());
 		Mat imageWithEdges = edgeDetector(image);
 
 		Mat detectedObjects = findContours(imageWithEdges);
@@ -30,7 +30,8 @@ public class ObjectCounter {
 		System.out.println(quantity);
 		System.out.println(this.contours.size());
 		for(int i = 0; i<this.contours.size(); i++){
-			cropContour(image, contours.get(i), i);
+		Mat productImage = cropContour(image, contours.get(i), i);
+	
 		}
 		
 		/*Aplicar arcLength para saber si hay algun problema contornos muy grandes*/
@@ -75,7 +76,7 @@ public class ObjectCounter {
 			if (Imgproc.contourArea(verticesMat) > 40000
 					&& Imgproc.contourArea(verticesMat) < 6000000) {
 
-				System.out.println(Imgproc.contourArea(verticesMat));
+//				System.out.println(Imgproc.contourArea(verticesMat));
 				Imgproc.drawContours(filteredImage, contours, i, s1, -1);
 				this.contours.add(contours.get(i));
 				Highgui.imwrite("contour"+i+".jpg", filteredImage);
@@ -161,14 +162,16 @@ public class ObjectCounter {
 		findContoursAfterDistance(thres);
 	}
 	
-	public void cropContour(Mat image, MatOfPoint contour, int i){
+	public Mat cropContour(Mat image, MatOfPoint contour, int i){
 		Rect boundRect = Imgproc.boundingRect(contour);
 		boundRect.height += 30;
 		boundRect.width += 30;
 		boundRect.x -= 15;
 		boundRect.y -= 15;
 		Mat subImage = image.submat(boundRect);
-		//Highgui.imwrite("bound"+i+".jpg", subImage);
+		String filename = getClass().getResource("/FoundObjects").getPath()+"/bound"+i+".jpg";
+		Highgui.imwrite(filename,subImage);
+	    return subImage;
 	}
 
 }
