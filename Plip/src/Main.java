@@ -1,18 +1,12 @@
-import java.io.File;
-
 import org.opencv.features2d.DescriptorMatcher;
 
+import recongizers.OrbBriskDetector;
 import Aux.ImageEraser;
-
-import recongizers.SurfDetector;
 import detectors.ObjectCounter;
 
 
 public class Main {
 
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
 		
 		System.loadLibrary("opencv_java246");
@@ -20,10 +14,10 @@ public class Main {
 		imageEraser.eraseFoundImages();
 		ObjectCounter canny =new ObjectCounter();
 	
-		canny.count("55.jpg");
+		canny.count("scenes/1.jpg");
 
-		SurfDetector surfDetector = new SurfDetector(DescriptorMatcher.BRUTEFORCE_HAMMING);
-		surfDetector.recognize();
+		OrbBriskDetector orbBriskDetector = new OrbBriskDetector(DescriptorMatcher.BRUTEFORCE_HAMMING);
+		orbBriskDetector.recognize();
 	}
 	
 	

@@ -1,7 +1,6 @@
 package recongizers;
 
 import java.io.File;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +24,8 @@ import org.opencv.features2d.KeyPoint;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
-public class SurfDetector {
+public class OrbBriskDetector {
+
 
 	public List<Mat> foundImagesDescriptors = new ArrayList<Mat>();
 	public List<Mat> productImagesDescriptors = new ArrayList<Mat>();
@@ -33,11 +33,11 @@ public class SurfDetector {
 	public List<String> productImagesNames = new ArrayList<String>();
 	public DescriptorMatcher matcher;
 
-	public SurfDetector() {
+	public OrbBriskDetector() {
 		super();
 	}
 
-	public SurfDetector(int matcher) {
+	public OrbBriskDetector(int matcher) {
 		super();
 		this.matcher = DescriptorMatcher.create(matcher);
 		this.matcher.train();
@@ -265,16 +265,25 @@ public class SurfDetector {
 
 		computeDescriptors();
 		for (int i = 0; i < foundImagesDescriptors.size(); i++) {
-
+			double dist=100;	
+	    	int image = 0;
 			for (int j = 0; j < productImagesDescriptors.size(); j++) {
 
-				double dist = minDist(foundImagesDescriptors.get(i),
+				double temp = minDist(foundImagesDescriptors.get(i),
 						productImagesDescriptors.get(j));
-				if (dist < 50) {
-					System.out.println(foundImageNames.get(i) + "-"
-							+ productImagesNames.get(j) + "- Dist:" + dist);
-				}
+				 if( temp < dist ){
+        			 dist=temp;
+        			 image=j;
+        		 }
+				
 			}
+			
+
+			if(dist < 70){
+	        	System.out.println(foundImageNames.get(i)+"-"+productImagesNames.get(image)+"- Dist:"+ dist);
+	        }else{
+	        	System.out.println(foundImageNames.get(i)+"minimun distance is not acceptable");
+	        }
 
 		}
 	}
@@ -357,6 +366,7 @@ public class SurfDetector {
 		if (image != null) {
 			Mat greyscale_image = new Mat();
 			Imgproc.cvtColor(image, greyscale_image, Imgproc.COLOR_BGR2GRAY);
+			
 			MatOfKeyPoint keypoints = new MatOfKeyPoint();
 			FeatureDetector detector = FeatureDetector
 					.create(FeatureDetector.ORB);
