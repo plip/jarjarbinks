@@ -1,6 +1,7 @@
 package recongizers;
 
 import java.io.File;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +15,7 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.features2d.DMatch;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.DescriptorMatcher;
@@ -24,6 +26,22 @@ import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 public class SurfDetector {
+
+	public List<Mat> foundImagesDescriptors = new ArrayList<Mat>();
+	public List<Mat> productImagesDescriptors = new ArrayList<Mat>();
+	public List<String> foundImageNames = new ArrayList<String>();
+	public List<String> productImagesNames = new ArrayList<String>();
+	public DescriptorMatcher matcher;
+
+	public SurfDetector() {
+		super();
+	}
+
+	public SurfDetector(int matcher) {
+		super();
+		this.matcher = DescriptorMatcher.create(matcher);
+		this.matcher.train();
+	}
 
 	public void detect(String imageRes, String sceneRes) {
 
@@ -48,6 +66,7 @@ public class SurfDetector {
 				.create(DescriptorExtractor.BRISK);
 
 		Mat descriptors_object = new Mat();
+
 		Mat descriptors_scene = new Mat();
 		extractor.compute(img_object, keypoints_object, descriptors_object);
 		extractor.compute(img_scene, keypoints_scene, descriptors_scene);
@@ -171,15 +190,15 @@ public class SurfDetector {
 		Highgui.imwrite(filename, img_matches);
 
 	}
-	
-	
+
 	public double minDist(String imageRes, String sceneRes) {
-//		Mat img_object = Highgui.imread(getClass().getResource("/" + imageRes)
-//				.getPath());
-//		Mat img_scene = Highgui.imread(getClass().getResource("/" + sceneRes)
-//				.getPath());
-//		System.out.println(imageRes);
-//		System.out.println(sceneRes);
+		// Mat img_object = Highgui.imread(getClass().getResource("/" +
+		// imageRes)
+		// .getPath());
+		// Mat img_scene = Highgui.imread(getClass().getResource("/" + sceneRes)
+		// .getPath());
+		// System.out.println(imageRes);
+		// System.out.println(sceneRes);
 		Mat img_object_src = Highgui.imread(imageRes);
 		Mat img_scene_src = Highgui.imread(sceneRes);
 		Mat img_object = new Mat();
@@ -187,7 +206,8 @@ public class SurfDetector {
 		Imgproc.cvtColor(img_object_src, img_object, Imgproc.COLOR_BGR2GRAY);
 		Imgproc.cvtColor(img_scene_src, img_scene, Imgproc.COLOR_BGR2GRAY);
 		// -- Step 1: Detect the keypoints using SURF Detector
-
+		// Imgproc.GaussianBlur(img_scene, img_scene, new Size (5,5), 2.2, 2);
+		// Imgproc.GaussianBlur(img_object, img_object, new Size (5,5), 2.2, 2);
 		FeatureDetector detector = FeatureDetector.create(FeatureDetector.ORB);
 
 		MatOfKeyPoint keypoints_object = new MatOfKeyPoint();
@@ -206,6 +226,7 @@ public class SurfDetector {
 		extractor.compute(img_scene, keypoints_scene, descriptors_scene);
 
 		// -- Step 3: Matching descriptor vectors using FLANN matcher
+
 		DescriptorMatcher matcher = DescriptorMatcher
 				.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
 		MatOfDMatch matches = new MatOfDMatch();
@@ -234,43 +255,117 @@ public class SurfDetector {
 	}
 
 	public void recognize() {
+		// File foundFolder = new File(getClass().getResource("/FoundObjects")
+		// .getPath());
+		// File productImageFolder = new
+		// File(getClass().getResource("/ProductImages")
+		// .getPath());
+		// File[] foundListOfFiles = foundFolder.listFiles();
+		// File[] productImageListOfFiles = productImageFolder.listFiles();
+
+		computeDescriptors();
+		for (int i = 0; i < foundImagesDescriptors.size(); i++) {
+
+			for (int j = 0; j < productImagesDescriptors.size(); j++) {
+
+				double dist = minDist(foundImagesDescriptors.get(i),
+						productImagesDescriptors.get(j));
+				if (dist < 50) {
+					System.out.println(foundImageNames.get(i) + "-"
+							+ productImagesNames.get(j) + "- Dist:" + dist);
+				}
+			}
+
+		}
+	}
+
+	/* Calculate minDist between to image descriptors */
+
+	public double minDist(Mat objectDescriptor, Mat productDescriptor) {
+
+		double min_dist = -100;
+		if (objectDescriptor != null && productDescriptor != null) {
+
+			DescriptorMatcher matcher = this.matcher;
+			if (matcher == null) {
+				this.matcher = DescriptorMatcher
+						.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
+				this.matcher.train();
+				matcher = this.matcher;
+			}
+			MatOfDMatch matches = new MatOfDMatch();
+
+			matcher.match(objectDescriptor, productDescriptor, matches);
+
+			double max_dist = 0;
+			min_dist = 100;
+			// matches = matchesList.get(0);
+			// -- Quick calculation of max and min distances between keypoints
+
+			double[] distances = new double[objectDescriptor.rows()];
+			for (int i = 0; i < objectDescriptor.rows(); i++) {
+				DMatch[] dmatches = matches.toArray();
+				double dist = dmatches[i].distance;
+				distances[i] = dist;
+				if (dist < min_dist) {
+					min_dist = dist;
+				}
+				if (dist > max_dist) {
+					max_dist = dist;
+				}
+			}
+		}
+		return min_dist;
+	}
+
+	/* initialize detector get All image Descriptors */
+
+	public void computeDescriptors() {
 		File foundFolder = new File(getClass().getResource("/FoundObjects")
 				.getPath());
-		File productImageFolder = new File(getClass().getResource("/ProductImages")
-				.getPath());
+		File productImageFolder = new File(getClass().getResource(
+				"/ProductImages").getPath());
 		File[] foundListOfFiles = foundFolder.listFiles();
 		File[] productImageListOfFiles = productImageFolder.listFiles();
 
-		    for (int i = 0; i < foundListOfFiles.length; i++) {
-		      if (foundListOfFiles[i].isFile()) {
-		        for(int j=0; j<productImageListOfFiles.length; j++){
-		        	 if (productImageListOfFiles[j].isFile() && !((productImageListOfFiles[j].getName()).equals(".DS_Store"))) {
-		        		 String foundImageResource = foundListOfFiles[i].getPath();
-		        		 String productImageResource = productImageListOfFiles[j].getPath();
-		        		 double dist = minDist(productImageResource, foundImageResource);
-		        		 String boldinit ="";
-		        		 String boldFinish = "";
-		        		 if(dist < 60){
-		        			  boldinit = "\033[1m";
-		        			  boldFinish = "\033[0m";
-		        			  System.out.println(foundListOfFiles[i].getName()+"-"+productImageListOfFiles[j].getName()+"- Dist:"+ dist);
-		        		 }
-		        		// System.out.println(boldinit+foundListOfFiles[i].getName()+"-"+productImageListOfFiles[j].getName()+"- Dist:"+ dist + boldFinish);
-//		        		 if(dist < 40){
-//		        			 System.out.println(foundListOfFiles[i].getName()+"-"+productImageListOfFiles[j].getName());
-//		        		 }
-		        	 }
-		      } 
-		      }
-		    }
+		for (int i = 0; i < foundListOfFiles.length; i++) {
+			if (foundListOfFiles[i].isFile()) {
+				String imagePath = foundListOfFiles[i].getPath();
+				Mat objectImage = Highgui.imread(imagePath);
+				Mat descriptors = extractImageDescriptor(objectImage);
+				foundImagesDescriptors.add(descriptors);
+				foundImageNames.add(foundListOfFiles[i].getName());
+			}
+		}
+		for (int i = 0; i < productImageListOfFiles.length; i++) {
+			if (productImageListOfFiles[i].isFile()
+					&& !((productImageListOfFiles[i].getName())
+							.equals(".DS_Store"))) {
+				String imagePath = productImageListOfFiles[i].getPath();
+				Mat productImage = Highgui.imread(imagePath);
+				Mat descriptors = extractImageDescriptor(productImage);
+				productImagesDescriptors.add(descriptors);
+				productImagesNames.add(productImageListOfFiles[i].getName());
+			}
+		}
 	}
-	/** @function main */
-	// public static void main( String[] args )
-	// {
-	// System.loadLibrary("opencv_java246");
-	// SurfDetector surfDetector = new SurfDetector();
-	// surfDetector.detect("Lanzopral.jpg","_Lanzopral.jpg");
-	//
-	// }
+
+	/* extract Image Descripto */
+
+	public Mat extractImageDescriptor(Mat image) {
+		Mat descriptors = new Mat();
+		if (image != null) {
+			Mat greyscale_image = new Mat();
+			Imgproc.cvtColor(image, greyscale_image, Imgproc.COLOR_BGR2GRAY);
+			MatOfKeyPoint keypoints = new MatOfKeyPoint();
+			FeatureDetector detector = FeatureDetector
+					.create(FeatureDetector.ORB);
+			detector.detect(greyscale_image, keypoints);
+			DescriptorExtractor extractor = DescriptorExtractor
+					.create(DescriptorExtractor.BRISK);
+			extractor.compute(greyscale_image, keypoints, descriptors);
+		}
+		return descriptors;
+	}
 
 }
